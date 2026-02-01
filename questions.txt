@@ -1,0 +1,6 @@
+*.⁠ ⁠Piecewise Linear Funcitons? How many linear regions can they have? How to figure out which hidden units form which linear regions?
+*.⁠ ⁠For n linear regions n-1 slopes are independent. Are they independent of the hidden units?
+*.⁠ ⁠For the universal approximation theorem is there a limit to how accurate the approximation is for the function based on the subset of the real line? If so are there any criterias other than the hidden units that come into play?
+*.⁠ ⁠For multivariate outputs how are the joints in the same positions eventhough we are using different slopes for the the outputs?
+*. What does it mean to fold an input space?
+*.⁠ ⁠Convex Polytopes. How do they scale based on the number of inputs and hidden units?
