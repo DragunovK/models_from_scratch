@@ -211,3 +211,14 @@ __marimo__/
 
 # MacOS filesystem
 .DS_Store
+
+# Quarto
+.quarto/
+**/*.quarto_ipynb
+_environment
+_manuscript
+_freeze
+notes/.gitignore
+
+# Other
+**drafts*

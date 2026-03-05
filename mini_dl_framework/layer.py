@@ -15,10 +15,14 @@ class Layer:
 
 
 class Dense(Layer):
-    def __init__(self, n_in, n_out, rng=None):
+    def __init__(self, n_in, n_out, rng=None, he: bool = True):
         rng = rng or np.random.default_rng()
 
-        self.w = Node(rng.normal(0.0, 2 / n_in, size=(n_in, n_out)), node_type="W")
+        if he:
+            self.w = Node(rng.normal(0.0, 2 / n_in, size=(n_in, n_out)), node_type="W")
+        else:
+            self.w = Node(rng.normal(0.0, 1.0, size=(n_in, n_out)), node_type="W")
+
         self.b = Node(np.zeros((n_out,), dtype=np.float32), node_type="B")
 
     def forward(self, x: Node) -> Node:

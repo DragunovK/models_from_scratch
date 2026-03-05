@@ -31,7 +31,9 @@ class Node:
             self.gradient = self.gradient + result.gradient
 
             g_other = result.gradient
-            # If broadcast happened, sum over the broadcasted axes.
+            # gradient of the bias is the sum of the gradients of the
+            # bias for each row of the batch.
+            # if broadcast happens, sum over the broadcasted axes.
             if other.value.shape != result.value.shape:
                 # Common case: (N, M) + (M,)
                 g_other = np.sum(g_other, axis=0)
@@ -41,18 +43,6 @@ class Node:
         result.__grad = __grad
         return result
 
-    # def __add__(self, other: "Node") -> "Node":
-    #     other = other if isinstance(other, Node) else Node(other)
-    #     result = Node(self.value + other.value, (self, other), "+")
-
-    #     def __grad():
-    #         self.gradient = self.gradient + result.gradient
-    #         other.gradient = other.gradient + result.gradient
-
-    #     result.__grad = __grad
-
-    #     return result
-
     def relu(self) -> "Node":
         result = Node(np.maximum(self.value, 0), (self,), "ReLU")
 
@@ -60,13 +50,16 @@ class Node:
             self.gradient = self.gradient + result.gradient * (self.value > 0)
 
         result.__grad = __grad
-
         return result
 
     def softmax(self) -> "Node":
         # stable softmax over last axis
         x = self.value
+
+        # trick to prevent overflow of exp is to subtract
+        # X_max from inputs before running softmax
         x = x - np.max(x, axis=-1, keepdims=True)
+
         expx = np.exp(x)
         s = expx / np.sum(expx, axis=-1, keepdims=True)
 
@@ -80,17 +73,6 @@ class Node:
 
         result.__grad = __grad
         return result
-
-    # def softmax(self) -> "Node":
-    #     result = Node(np.exp(self.value) / np.sum(np.exp(self.value)), (self,), "SoftMax")
-
-    #     def __grad():
-    #         dot = np.sum(result.value * result.gradient)
-    #         self.gradient = self.gradient + result.value * (result.gradient - dot)
-
-    #     result.__grad = __grad
-
-    #     return result
 
     def reset_grad(self) -> None:
         if not self.nodes:
