@@ -15,7 +15,7 @@ class Layer:
 
 
 class Dense(Layer):
-    def __init__(self, n_in, n_out, rng=None, he: bool = True):
+    def __init__(self, n_in: int, n_out: int, rng: np.random.Generator | None = None, he: bool = True):
         rng = rng or np.random.default_rng()
 
         if he:
