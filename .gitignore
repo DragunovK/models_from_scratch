@@ -222,3 +222,4 @@ notes/.gitignore
 
 # Other
 **drafts*
+**artifacts/

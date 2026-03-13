@@ -1,4 +1,4 @@
-from autograd import Node
+from ..autograd import Node
 
 import numpy as np
 
@@ -14,7 +14,7 @@ class CustomLayer(Layer):
             x.gradient = x.gradient + ...
 
         # IMPORTANT: name-mangled attribute
-        result._Node__grad = __grad
+        result._Node__grad = __grad  # type: ignore[attr-defined] <-- also add this comment to disable undef warning.
 
         return result
 """

@@ -1,4 +1,4 @@
-from autograd import Node
+from ..autograd import Node
 
 import numpy as np
 
@@ -21,8 +21,7 @@ class SumOfSquares(Loss):
             y_est.gradient = y_est.gradient + (diff / N) * loss_node.gradient
 
         # IMPORTANT: name-mangled attribute
-        loss_node._Node__grad = __grad
-
+        loss_node._Node__grad = __grad  # type: ignore[attr-defined]
         return loss_node, float(loss_val)
 
 
@@ -45,6 +44,5 @@ class CrossEntropy(Loss):
         def __grad():
             y_est.gradient = y_est.gradient + ((y_est_val - y_true) / N) * loss_node.gradient
 
-        loss_node._Node__grad = __grad
-
+        loss_node._Node__grad = __grad  # type: ignore[attr-defined]
         return loss_node, float(loss_val)

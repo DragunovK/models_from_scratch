@@ -1,4 +1,4 @@
-from autograd import Node
+from ..autograd import Node
 
 import numpy as np
 

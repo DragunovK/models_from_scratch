@@ -2,12 +2,12 @@
 title: Deep Learning Notes
 ---
 
-## Questions
+# Questions
 
 The Questions section is there so we can track *work-in-progress* questions. Any question we might have is to be put here.
 As we work through the material, answered questions become part of Notes section.
 
-### Normalization vs Standardization vs Scaling down
+## Normalization vs Standardization vs Scaling down
 
 Normalization 
 
@@ -25,24 +25,24 @@ When to use each?
 
 [*Next Step*]{.underline}: Batch normalization: when to use and key benefits. Batch normalization vs dataset normalization. Is batch standardization even a thing?
 
-### Our API vs Torch
+## Our API vs Torch
 
 Torch seems to be learning significantly faster, but it is a lot more volatile. Our loss curve is very smooth, but torch's is wiggly (see mnist.ipynb). 
 Our implementation may be missing something.
 
-### Network Depth vs Thickness
+## Network Depth vs Thickness
 
 How does depth vs thickness affect the performance? What is better: 1 layer with 100 neurons or 10 layers 10 neurons each?
 
-### "No He" with momentum seems to break
+## "No He" with momentum seems to break
 
 See figure in Initialization section. Weight initialization with $N(0, 1)$ behaves very oddly with enabled momentum. Why is that?
 
-## Notes
+# Notes
 
 The Notes section contains resolved/answered questions as well as notes and deeper explanations of the material from the books.
 
-### Initialization
+## Initialization
 
 Weights to transform 
 $$H_{i} \xrightarrow{W_{|H_i| \times |H_o|}} H_{o}$$
@@ -76,11 +76,11 @@ with_momentum = (hv.Curve(df[["hist_no_he"]]) * hv.Curve(df[["hist_he"]])).opts(
 no_momentum + with_momentum
 ```
 
-### Addressing Overflow
+## Addressing Overflow
 
 When doing computations, overflows may occur (e.g. SoftMax overflow as $e^x$ explodes, hidden layer overflow in large matrix multiplications)
 
-#### Addressing Overflow in SoftMax
+### Addressing Overflow in SoftMax
 
 To address overflow in SoftMax, we can subtract maximum element from the input vector:
 $$ X' = X - X_{max} $$
@@ -130,7 +130,7 @@ S2 = softmax(X2)
 print(f"{S1=}\n{S2=}")
 ```
 
-#### Addressing overflow in ReLU
+### Addressing overflow in ReLU
 
 Networks with ReLU activation are more resistent to underflows than overflows due to ReLU clipping output on the bottom, but not at the top.
 Overflow at the top is addressed by setting an upper bound (usually 1).
@@ -144,7 +144,7 @@ def ReLU(X, clip=1):
   return np.minimum(relu, clip)
 ```
 
-### Forward-and-Backpropagation in Batches
+## Forward-and-Backpropagation in Batches
 
 In literature, neural nets are commonly depicted as 
 
@@ -177,3 +177,7 @@ $$H^{n-1}_{b \times |H^{n-1}|}W^{n-1}_{|H^{n-1}| \times |H^n|} + B_{1 \times |H^
 $$H^n_{b \times |H^n|}W^n_{|H^{n}| \times |Y|} + B_{1 \times |Y|} = \hat{Y}_{b \times |Y|}$$
 
 Note that bias $B^i_{1 \times |H^{i+1}|}$ is broadcasted along the dimension of the batch indices (1st dimension).
+
+## Loss Functions
+
+### Cross-Entropy Loss

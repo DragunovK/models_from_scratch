@@ -1,5 +1,5 @@
-from autograd import Node, topo_sort
-from layer import Layer
+from ..autograd import Node, topo_sort
+from .layer import Layer
 
 import numpy as np
 
@@ -42,7 +42,16 @@ class Sequential(Model):
         self._loss = loss
         self._params = self._get_params()
 
-    def fit(self, X, Y, epochs, batch_size=-1, shuffle=True, verbose=True):
+    def fit(
+        self,
+        X: np.ndarray,
+        Y: np.ndarray,
+        epochs: int,
+        batch_size: int = -1,
+        validation_split: int = 0,
+        shuffle: bool = True,
+        verbose: bool = True,
+    ):
         X = np.asarray(X)
         Y = np.asarray(Y)
 

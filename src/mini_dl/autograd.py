@@ -20,7 +20,6 @@ class Node:
             other.gradient = other.gradient + (self.value.T @ result.gradient)
 
         result.__grad = __grad
-
         return result
 
     def __add__(self, other: "Node") -> "Node":
