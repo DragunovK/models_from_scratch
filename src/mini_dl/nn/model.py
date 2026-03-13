@@ -2,6 +2,7 @@ from ..autograd import Node, topo_sort
 from .layer import Layer
 
 import numpy as np
+from collections import defaultdict
 
 
 class Model:
@@ -42,63 +43,112 @@ class Sequential(Model):
         self._loss = loss
         self._params = self._get_params()
 
+    def __fb(self, X: np.ndarray, Y: np.ndarray) -> float:
+        """Performs one-batch forward and then backward pass.
+        Returns loss.
+        """
+        x_node = Node(X, node_type="Input")
+        y_est = self(x_node)
+
+        loss_node, loss_val = self._loss(y_est, Y)
+        self.backward(loss_node)
+
+        return loss_val
+
+    def __fb_noback(self, X: np.ndarray, Y: np.ndarray) -> float:
+        """Version of __fb(X, Y) that computes loss but does not
+        compute gradients (backward pass is not performed)
+        """
+        x_node = Node(X, node_type="Input")
+        y_est = self(x_node)
+
+        _, loss_val = self._loss(y_est, Y)
+        return loss_val
+
     def fit(
         self,
         X: np.ndarray,
         Y: np.ndarray,
         epochs: int,
-        batch_size: int = -1,
-        validation_split: int = 0,
+        batch_size: int = 1,  # 0 < batch_size <= n
+        validation_split: float = 0.0,  # 0 <= validation_split <= 0.9
         shuffle: bool = True,
+        shuffle_before_split: bool = True,
         verbose: bool = True,
-    ):
+        rich_history: bool = False,
+    ) -> defaultdict[str, list]:
+        """Fits model to provided data. This function runs the main learning loop.
+        Params:
+            X(np.ndarray): image samples w/ shape (n_samples, image_len)
+            Y(np.ndarray): label samples w/ shape (n_samples, label_len)
+            epochs(integer > 0): number of epochs to run training loop for
+            batch_size(integer in range [1, n_samples]): batch size
+            validation_split(float in range [0, 0.9]): validation split
+            shuffle(bool): whether to shuffle the training data each epoch or not
+            shuffle_before_split(bool): whether to shuffle X before train:validation split
+            verbose(bool): whether to print performance stats each epoch
+            rich_history(bool): whether to include momentums and learning rates in returned hist. (TODO)
+        Returns:
+            history(dict): training history
+        """
         X = np.asarray(X)
         Y = np.asarray(Y)
 
-        n = X.shape[0]
-        self.history = {"loss": []}
+        n_samples = X.shape[0]
+
+        if validation_split:
+            idx = np.arange(n_samples)
+            if shuffle_before_split:
+                np.random.shuffle(idx)
+
+            split_point = int(validation_split * n_samples)
+            n_samples = split_point  # batch slicing is based on n_samples
+
+            train_idx = idx[split_point:]
+            valid_idx = idx[:split_point]
+
+            X_train = X[train_idx]
+            X_valid = X[valid_idx]
+
+            Y_train = Y[train_idx]
+            Y_valid = Y[valid_idx]
+        else:
+            X_train = X
+            Y_train = Y
+
+        self.history = defaultdict(list)
 
         for epoch in range(epochs):
-            idx = np.arange(n)
+            idx = np.arange(n_samples)
             if shuffle:
                 np.random.shuffle(idx)
 
             total_loss = 0.0
-            n_batches = 0
-
-            if batch_size <= 0:
-                x_batch = X[idx]
-                y_batch = Y[idx]
-
-                x_batch_node = Node(x_batch, node_type="Input")
-                y_est = self(x_batch_node)
-
-                loss_node, loss_val = self._loss(y_est, y_batch)
-                self.backward(loss_node)
-
+            if batch_size == 1:
+                total_loss = self.__fb(X_train[idx], Y_train[idx])
                 self._optimizer.step(self._params)
-                total_loss = float(loss_val)
             else:
-                for batch_left in range(0, n, batch_size):
+                for batch_left in range(0, n_samples, batch_size):
                     batch_idxs = idx[batch_left : (batch_left + batch_size)]
-                    x_batch = X[batch_idxs]
-                    y_batch = Y[batch_idxs]
+                    x_batch = X_train[batch_idxs]
+                    y_batch = Y_train[batch_idxs]
 
-                    x_batch_node = Node(x_batch, node_type="Input")
-                    logits = self(x_batch_node)
-
-                    batch_loss_node, batch_loss_val = self._loss(logits, y_batch)
-                    self.backward(batch_loss_node)
-
+                    batch_loss = self.__fb(x_batch, y_batch)
                     self._optimizer.step(self._params)
 
-                    total_loss += float(batch_loss_val)
-                    n_batches += 1
+                    total_loss += batch_loss
 
-            avg_loss = total_loss / (n_batches or 1)
-            self.history["loss"].append(avg_loss)
+            avg_loss = total_loss / batch_size
+            self.history["train_loss"].append(avg_loss)
 
             if verbose:
-                print(f"Epoch{epoch}: loss={avg_loss:.6f}")
+                print(f"[INFO] Epoch{epoch}: train_loss={avg_loss:.6f}")
+
+            if validation_split:
+                valid_loss = self.__fb_noback(X_valid, Y_valid)
+                self.history["valid_loss"].append(valid_loss)
+
+                if verbose:
+                    print(f"\t\t valid_loss={valid_loss:.6f}")
 
         return self.history

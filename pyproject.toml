@@ -7,6 +7,7 @@ requires-python = ">=3.13"
 dependencies = [
     "holoviews>=1.22.1",
     "ipykernel>=7.2.0",
+    "matplotlib>=3.10.8",
     "nbclient>=0.10.4",
     "nbformat>=5.10.4",
     "numpy>=2.4.2",
