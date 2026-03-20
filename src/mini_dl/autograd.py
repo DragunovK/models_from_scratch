@@ -73,6 +73,19 @@ class Node:
         result.__grad = __grad
         return result
 
+    def dropout(self, rate: float):
+        keep_pr = 1.0 - rate
+
+        mask = (np.random.rand(*self.value.shape) < keep_pr).astype(self.value.dtype) / keep_pr
+        result = Node(self.value * mask, (self,), "Dropout")
+
+        def __grad():
+            g = result.gradient * mask
+            self.gradient = self.gradient + g
+
+        result.__grad = __grad
+        return result
+
     def reset_grad(self) -> None:
         if not self.nodes:
             raise RuntimeError("Not the root node!!")

@@ -1,5 +1,7 @@
 from ..autograd import Node, topo_sort
-from .layer import Layer
+from .layer import Layer, Dropout
+from ..optim.optimizer import Optimizer
+from ..nn.loss import Loss
 
 import numpy as np
 from collections import defaultdict
@@ -16,13 +18,25 @@ class Model:
 class Sequential(Model):
     def __init__(self, layers: list[Layer]):
         self._layers = layers
-        self._loss = None
-        self._optimizer = None
+
+        self._loss = Loss()
+        self._optimizer = Optimizer()
+
+        self._eval_mode = False
 
     def __call__(self, x: Node):
         """Forward pass"""
 
+        if not self._eval_mode:
+            for layer in self._layers:
+                x = layer(x)
+            return x
+
+        # if in eval mode (validation / actual predictions)
+        # skip the dropout layers
         for layer in self._layers:
+            if isinstance(layer, Dropout):
+                continue
             x = layer(x)
         return x
 
@@ -38,7 +52,7 @@ class Sequential(Model):
             result.extend(p)
         return result
 
-    def compile_(self, optimizer, loss):
+    def compile_(self, optimizer: Optimizer, loss: Loss):
         self._optimizer = optimizer
         self._loss = loss
         self._params = self._get_params()
@@ -60,7 +74,10 @@ class Sequential(Model):
         compute gradients (backward pass is not performed)
         """
         x_node = Node(X, node_type="Input")
+
+        self._eval_mode = True  # enable eval mode to skip dropouts
         y_est = self(x_node)
+        self._eval_mode = False
 
         _, loss_val = self._loss(y_est, Y)
         return loss_val
@@ -117,6 +134,7 @@ class Sequential(Model):
             Y_train = Y
 
         self.history = defaultdict(list)
+        self._eval_mode = False
 
         for epoch in range(epochs):
             idx = np.arange(n_samples)
@@ -151,4 +169,5 @@ class Sequential(Model):
                 if verbose:
                     print(f"\t\t valid_loss={valid_loss:.6f}")
 
+        self._eval_mode = True  # training is done, enable eval mode
         return self.history

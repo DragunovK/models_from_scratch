@@ -67,3 +67,13 @@ class ReLU(Layer):
 class SoftMax(Layer):
     def forward(self, x: Node) -> Node:
         return x.softmax()
+
+
+class Dropout(Layer):
+    def __init__(self, rate: float = 0.5):
+        if not 0 <= rate <= 1:
+            raise ValueError(f"{rate=} must be in range (0, 1)")
+        self.rate = rate
+
+    def forward(self, x: Node) -> Node:
+        return x.dropout(self.rate)
