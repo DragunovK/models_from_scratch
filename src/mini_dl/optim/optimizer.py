@@ -17,8 +17,10 @@ class SGDOptimizer(Optimizer):
     except for the decay and dampening, which are to be added later.
     """
 
-    def __init__(self, lr: float = 0.01, momentum: float = 0.0, nesterov: bool = False):
+    def __init__(self, lr: float = 0.01, momentum: float = 0.0, nesterov: bool = False, weight_decay: float = 0.0):
         self.lr = lr
+        self.weight_decay = weight_decay
+
         self.momentum = momentum
         self.nesterov = nesterov
         self.momentum_cache: dict[int, np.ndarray] = {}
@@ -37,6 +39,9 @@ class SGDOptimizer(Optimizer):
                     p.gradient = p.gradient + self.momentum * m
                 else:
                     p.gradient = m
+
+            if self.weight_decay > 0.0 and p.node_type == "W":
+                p.value = p.value * (1 - self.weight_decay)  # Hanson & Pratt 1988
 
             p.value = p.value - self.lr * p.gradient
 
