@@ -87,19 +87,19 @@ class Sequential(Model):
         X: np.ndarray,
         Y: np.ndarray,
         epochs: int,
-        batch_size: int = 1,  # 0 < batch_size <= n
+        batch_size: int = 0,  # 0 <= batch_size <= n
         validation_split: float = 0.0,  # 0 <= validation_split <= 0.9
         shuffle: bool = True,
         shuffle_before_split: bool = True,
         verbose: bool = True,
         rich_history: bool = False,
-    ) -> defaultdict[str, list]:
+    ) -> dict[str, list]:
         """Fits model to provided data. This function runs the main learning loop.
         Params:
             X(np.ndarray): image samples w/ shape (n_samples, image_len)
             Y(np.ndarray): label samples w/ shape (n_samples, label_len)
             epochs(integer > 0): number of epochs to run training loop for
-            batch_size(integer in range [1, n_samples]): batch size
+            batch_size(integer in range [0, n_samples]): batch size
             validation_split(float in range [0, 0.9]): validation split
             shuffle(bool): whether to shuffle the training data each epoch or not
             shuffle_before_split(bool): whether to shuffle X before train:validation split
@@ -113,16 +113,16 @@ class Sequential(Model):
 
         n_samples = X.shape[0]
 
-        if validation_split:
+        if validation_split > 0.0:
             idx = np.arange(n_samples)
             if shuffle_before_split:
                 np.random.shuffle(idx)
 
-            split_point = int(validation_split * n_samples)
+            split_point = int((1 - validation_split) * n_samples)
             n_samples = split_point  # batch slicing is based on n_samples
 
-            train_idx = idx[split_point:]
-            valid_idx = idx[:split_point]
+            train_idx = idx[:split_point]
+            valid_idx = idx[split_point:]
 
             X_train = X[train_idx]
             X_valid = X[valid_idx]
@@ -142,9 +142,12 @@ class Sequential(Model):
                 np.random.shuffle(idx)
 
             total_loss = 0.0
-            if batch_size == 1:
+            num_batches = 0
+
+            if batch_size == 0:
                 total_loss = self.__fb(X_train[idx], Y_train[idx])
                 self._optimizer.step(self._params)
+                num_batches = 1
             else:
                 for batch_left in range(0, n_samples, batch_size):
                     batch_idxs = idx[batch_left : (batch_left + batch_size)]
@@ -155,14 +158,15 @@ class Sequential(Model):
                     self._optimizer.step(self._params)
 
                     total_loss += batch_loss
+                    num_batches += 1
 
-            avg_loss = total_loss / batch_size
+            avg_loss = total_loss / num_batches
             self.history["train_loss"].append(avg_loss)
 
             if verbose:
                 print(f"[INFO] Epoch{epoch}: train_loss={avg_loss:.6f}")
 
-            if validation_split:
+            if validation_split > 0.0:
                 valid_loss = self.__fb_noback(X_valid, Y_valid)
                 self.history["valid_loss"].append(valid_loss)
 
